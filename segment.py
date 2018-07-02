@@ -5,11 +5,12 @@ def next_power_of_two(n):
     return ans
 
 class SegmentTree(object):
-    def __init__(self, arr, merge=lambda x,y: x+y):
+    def __init__(self, arr, merge=lambda x,y: x+y, default_val=0):
         self.merge = merge
         self.arr = arr
         self.n = len(arr)
-        self.tree = [0] * (2 * next_power_of_two(self.n) - 1)
+        self.default_val = default_val
+        self.tree = [self.default_val] * (2 * next_power_of_two(self.n) - 1)
         self.initialize(0, self.n-1, 0)
 
     def initialize(self, start, end, index):
@@ -30,7 +31,7 @@ class SegmentTree(object):
         if start <= sstart and send <= end:
             return self.tree[index]
         if sstart > end or send < start:
-            return 0
+            return self.default_val
         mid = (sstart + send) // 2
         return self.merge(self._get_range(sstart, mid, start, end, 2*index+1),
                 self._get_range(mid+1, send, start, end, 2*index+2))
@@ -47,6 +48,21 @@ class SegmentTree(object):
             mid = (start + end) // 2
             self._update(start, mid, index, diff, sindex*2+1)
             self._update(mid+1, end, index, diff, sindex*2+2)
+
+    def replace(self, index, newval):
+        self.arr[index] = newval
+        self._replace(0, self.n-1, index, newval, 0)
+
+    def _replace(self, start, end, index, newval, sindex):
+        if index < start or index > end: return
+
+        if start != end:
+            mid = (start + end) // 2
+            self._replace(start, mid, index, newval, sindex*2+1)
+            self._replace(mid+1, end, index, newval, sindex*2+2)
+            self.tree[sindex] = self.merge(self.tree[sindex*2+1], self.tree[sindex*2+2])
+        else:
+            self.tree[sindex] = newval
 
     def __getitem__(self, index):
         return self.arr[index]
